@@ -11,8 +11,8 @@ float framerate,
     sceneX,
     sceneY,
     cnt = 0,
-    eyePos[3] = {0.0, -1.5, 0.0},
-    center[3] = {0.0, 0.0, -10.0},
+    eyePos[3] = {0.0, -0.7, 0.0},
+    center[3] = {0.0, -0.0, -10.0},
     up[3] = {0.0, 1.0, 0.0},
     sceneDeltaX,
     sceneDeltaY,
@@ -30,8 +30,8 @@ float framerate,
     zLength = 1.0,
     subwaySpeed = 0.1;
 
-int windowWidth = 600,
-    windowHeight = 600,
+int windowWidth = 1500,
+    windowHeight = 1500,
     windowX = 0,
     windowY = 0,
     showMenu = 1,
@@ -44,14 +44,19 @@ GLint subwayTexture,
     obstacleTexture,
     rewardTexture;
 
+float wallWidth = 1,
+      wallAngle = 360.0 / subwaySides,
+      wallDistFromCenter = (wallWidth / 2) / tan((wallAngle / 2) * (3.14159 / 180));
+
+#include "lighting.h"
+#include "keyboard.h"
 float subwayCurve(float, float (*)(float));
 void drawGame();
 void drawMenu();
 void initGameAndControls();
 void initDeque();
 void handleTimer(int);
-#include "lighting.h"
-#include "keyboard.h"
+
 // Data structures for positioning subway and obstacles
 struct subwayUnitInfo
 {
@@ -67,7 +72,6 @@ struct subwayUnitInfo
         obstaclePos = oP;
     }
 };
-map<char, bool> isPressed;
 deque<subwayUnitInfo> dq;
 
 GLuint LoadAny(const char *fileName)
@@ -164,7 +168,7 @@ void handleMouse(int button, int state, int x, int y)
     if (showMenu == 1 && button == GLUT_LEFT_BUTTON && state == GLUT_UP)
     {
         showMenu = 0;
-        framerate = 1000;
+        framerate = 50;
         handleResize(windowWidth, windowHeight);
         initGameAndControls();
     }
@@ -188,8 +192,8 @@ void initWindow()
 {
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
     glutInitWindowSize(windowWidth, windowHeight);
-    glutInitWindowPosition(windowX, windowY);
-    glutCreateWindow("subway Trouble");
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("subway Simulator");
     glViewport(0, 0, windowWidth, windowHeight);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
@@ -200,11 +204,10 @@ void initWindow()
 void initGameAndControls()
 {
     glutDisplayFunc(drawGame);
-    // system("killall paplay");
-    // system("amixer -D pulse sset Master 100%");
-    // system("paplay music.wav &");
     initDeque();
     glutTimerFunc(0, handleTimer, 0);
+    glutSpecialFunc(handleSpecialFunc);
+    glutKeyboardFunc(handleKeyboardFunc);
     initPerspectiveAndCamera();
 }
 
@@ -356,9 +359,7 @@ void drawFullsubway()
         float reqAngleY = atan(subwayCurveDerivative(globalZ + subwayUnitsCount * zLength, cos)) * 180 / 3.14;
         glRotatef(reqAngleX, 0.0, 1.0, 0.0);
         glRotatef(reqAngleY, -1.0, 0.0, 0.0);
-        float wallWidth = 2,
-              wallAngle = 360.0 / subwaySides,
-              wallDistFromCenter = (wallWidth / 2) / tan((wallAngle / 2) * (3.14159 / 180));
+        
         pair<int, int> oP = dq[i].obstaclePos;
         for (int i = 0; i < subwaySides; i++)
         {
@@ -382,6 +383,19 @@ void drawFullsubway()
         }
         glPopMatrix();
     }
+    glDisable(GL_LIGHTING);
+    glColor3f(2.0,0,0);
+    glPushMatrix();
+    glRotatef(sceneRotate,0,0,-1);
+    glTranslatef(dq[2].centerX,dq[2].centerY,dq[2].centerZ);
+    glTranslatef(0, -1, 0);
+    glScalef(0.25,0.25,0.25);
+    
+    glutWireSphere(0.5,20,20);
+    glPopMatrix();
+    glEnable(GL_LIGHTING);
+
+
 }
 
 // precalculations for the scene
@@ -433,6 +447,7 @@ void drawGame()
     drawFullsubway();
     glPopMatrix();
     glFlush();
+    isPressed.clear();
     
 }
 
