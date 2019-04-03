@@ -194,7 +194,7 @@ void initBasicCallbacks() {
 
 // loads Textures
 void loadTextures() {
-    tunnelTexture = LoadBMP("textures/binary.bmp");
+    tunnelTexture = LoadBMP("textures/white.bmp");
     startTexture = LoadBMP("textures/start.bmp");
     obstacleTexture=LoadBMP("textures/obstacle.bmp");
 }

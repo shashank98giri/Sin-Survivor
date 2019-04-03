@@ -1,0 +1,2 @@
+g++ gamemain.cpp -lglut -lGL -lGLU -o exec
+./exec
