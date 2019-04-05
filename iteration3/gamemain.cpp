@@ -217,7 +217,7 @@ void loadTextures()
     subwayTexture = LoadBMP("textures/white.bmp");
     startTexture = LoadBMP("textures/start.bmp");
     obstacleTexture = LoadBMP("textures/obstacle.bmp");
-    rewardTexture = LoadAny("textures/gold");
+    rewardTexture = LoadAny("textures/gold.jpg");
 }
 
 void singleSide(float xWidth)
@@ -311,7 +311,7 @@ void singleObstacle(float xWidth, float yHeight, float zThickness)
     glTexCoord2f(1.0f, 1.0f);
     glVertex3f(wallWidth / 2, wallWidth / 2, wallWidth / 2);
     glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(wallWidth/2, wallWidth / 2, 0);
+    glVertex3f(wallWidth/2, 0,wallWidth/2);
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
@@ -353,7 +353,7 @@ pair<int, int> rarity()
     {
         genrandom();
         i=0;
-        int arr[]={0,1,2,3,9,8,7};
+        int arr[]={0,1,2,9,8};
         return make_pair(arr[rand()%7], rand() % 2);
     }
     i++;
@@ -425,14 +425,14 @@ void drawFullsubway()
         glPopMatrix();
     }
     glDisable(GL_LIGHTING);
-    glColor3f(2.0,0,0);
+    glColor3f(0,0,0);
     glPushMatrix();
     glTranslatef(dq[2].centerX, dq[2].centerY, dq[2].centerZ);
     glRotatef(sceneRotate,0,0,-1);    
     glTranslatef(0, -1, 0);
     glScalef(0.25,0.25,0.25);
     
-    glutWireSphere(0.5,20,20);
+    glutSolidSphere(0.5,20,20);
     glPopMatrix();
     glEnable(GL_LIGHTING);
 
@@ -474,8 +474,8 @@ void drawMenu()
 // draws main game
 void drawGame()
 {
-    if(isPressed['a'])sceneRotate=min(sceneRotate+wallAngle,3*wallAngle);
-    if(isPressed['d'])sceneRotate=max(sceneRotate-wallAngle,-3*wallAngle);
+    if(isPressed['a'])sceneRotate=min(sceneRotate+wallAngle,2*wallAngle);
+    if(isPressed['d'])sceneRotate=max(sceneRotate-wallAngle,-2*wallAngle);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();

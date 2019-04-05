@@ -51,6 +51,6 @@ void initPerspectiveAndCamera()
     if(isPressed['a'])center[0]=max(center[0]-0.5f,-1.0f);
     if(isPressed['d'])center[0]=min(center[0]+0.5f,1.0f);
     
-    gluPerspective(45.0, windowWidth / windowHeight, 0.01, -1000);
+    gluPerspective(45.0, windowWidth / windowHeight, 0.01, 1000);
     gluLookAt(eyePos[0], eyePos[1], eyePos[2], center[0], center[1], center[2], up[0], up[1], up[2]);
 }

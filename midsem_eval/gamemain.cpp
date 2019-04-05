@@ -305,7 +305,7 @@ float tunnelCurve(float zPos, float (*curveFunc)(float)) {
     float stretch = 1000;
     float radToDeg = zPos/piby180;
     float amplitude = 1;
-    return amplitude * curveFunc( radToDeg / stretch );
+    return 1;
 }
 
 // Function to calculate derivative of tunnel curve
