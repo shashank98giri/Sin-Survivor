@@ -3,8 +3,8 @@
 #include <GL/glut.h>
 #include <bits/stdc++.h>
 #include "stb_image.h"
-using namespace std;
 #include "terrain.h"
+using namespace std;
 
 //global variables used in all other files
 float framerate,
@@ -29,21 +29,24 @@ float framerate,
     subwayAngle = 0.0,
     globalZ = 0,
     zLength = 1.0,
+    tunnelAngle = 0.0,
     subwaySpeed = 0.1;
 
 int windowWidth = 1500,
     windowHeight = 1000,
+    showGameOver = 0,
     windowX = 100,
     windowY = 100,
     showMenu = 1,
     subwaySides = 10,
     subwayUnitsCount = 150,
-    score=0,
-    terrain_check=0;
+    score = 0,
+    terrain_check = 0;
 
 GLint subwayTexture,
     startTexture,
     obstacleTexture,
+    gameOverTexture,
     rewardTexture;
 
 float wallWidth = 1,
@@ -58,6 +61,10 @@ void drawMenu();
 void initGameAndControls();
 void initDeque();
 void handleTimer(int);
+
+void handleNothing(int a, int b, int c) {}
+void handleNothing(unsigned char a, int b, int c) {}
+void handleNothing(int) {}
 
 // Data structures for positioning subway and obstacles
 struct subwayUnitInfo
@@ -170,15 +177,13 @@ void handleMouse(int button, int state, int x, int y)
     if (showMenu == 1 && button == GLUT_LEFT_BUTTON && state == GLUT_UP)
     {
         showMenu = 0;
-        framerate = 100;
+        framerate = 250;
         handleResize(windowWidth, windowHeight);
         initGameAndControls();
     }
 
     glutPostRedisplay();
 }
-
-
 
 // generate Window
 void initWindow()
@@ -201,7 +206,6 @@ void initGameAndControls()
     glutTimerFunc(0, handleTimer, 0);
     glutKeyboardFunc(handleKeyboardFunc);
     glutSpecialFunc(handleSpecialFunc);
-    
 }
 
 // initializing Resize Menu and Mouse functions
@@ -210,7 +214,6 @@ void initBasicCallbacks()
     glutReshapeFunc(handleResize);
     glutDisplayFunc(drawMenu);
     glutMouseFunc(handleMouse);
-    
 }
 
 // loads Textures
@@ -220,6 +223,7 @@ void loadTextures()
     startTexture = LoadBMP("textures/start.bmp");
     obstacleTexture = LoadBMP("textures/obstacle.bmp");
     rewardTexture = LoadAny("textures/gold.jpg");
+    gameOverTexture = LoadBMP("textures/game_over.bmp");
 }
 
 void singleSide(float xWidth)
@@ -228,38 +232,38 @@ void singleSide(float xWidth)
     // glPushMatrix();
     // glScalef(0.02,0.4,0.02);
     //for (float z = -zLength / 2; z < zLength / 2; z += zLength / miniSquares)
-    
-    if(terrain_check){
+
+    if (terrain_check)
+    {
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, subwayTexture);
         glPushMatrix();
-        glTranslatef(0,2,0);
-        for(int z=0;z<_terrain->length()-55;z++)
+        glTranslatef(0, 1, 0);
+        glScalef(1.0 / 5, 1.0 / 2, 1.0 / 5);
+        for (int z = 0; z < _terrain->length() - 50; z++)
         {
             glBegin(GL_TRIANGLE_STRIP);
             //for (float x = -xWidth / 2; x < xWidth / 2; x += xWidth / miniSquares)
-            for(int x=0;x<_terrain->width()-55;x++)
+            for (int x = 0; x < _terrain->width() - 50; x++)
             {
-            
-                            
-                    Vec3f normal = _terrain->getNormal(x, z);
-                    glNormal3f(normal[0], normal[1], normal[2]);
-                    glTexCoord2f(x,z);
-                    //cout<<_terrain->getHeight(x,z)<<"\n";
-                    glVertex3f(x, _terrain->getHeight(x, z), z);
-                    //normal = _terrain->getNormal(x, z + 1);           
-                    glNormal3f(normal[0], normal[1], normal[2]);
-                    glTexCoord2f(x, z+1);
-                    glVertex3f(x, _terrain->getHeight(x, z + 1), z + 1);
-                    
-                
-            }        
+
+                Vec3f normal = _terrain->getNormal(x, z);
+                glNormal3f(normal[0], normal[1], normal[2]);
+                glTexCoord2f(x, z);
+                //cout<<_terrain->getHeight(x,z)<<"\n";
+                glVertex3f(x, _terrain->getHeight(x, z), z);
+                //normal = _terrain->getNormal(x, z + 1);
+                glNormal3f(normal[0], normal[1], normal[2]);
+                glTexCoord2f(x, z + 1);
+                glVertex3f(x, _terrain->getHeight(x, z + 1), z + 1);
+            }
             glEnd();
         }
         glPopMatrix();
         glDisable(GL_TEXTURE_2D);
     }
-    else{
+    else
+    {
         float miniSquares = 1;
         for (float z = -zLength / 2; z < zLength / 2; z += zLength / miniSquares)
         {
@@ -289,7 +293,7 @@ void singleObstacle(float xWidth, float yHeight, float zThickness)
     glPushMatrix();
     glScalef(xWidth, yHeight, zThickness);
     glTranslatef(-0.2, 0.5, 0.0);
-    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, obstacleTexture);
 
@@ -298,35 +302,35 @@ void singleObstacle(float xWidth, float yHeight, float zThickness)
     glTexCoord2f(0.0f, 0.0f);
     glVertex3f(0, 0, 0);
     glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(wallWidth/2, 0.0, 0);
+    glVertex3f(wallWidth / 2, 0.0, 0);
     glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(wallWidth/2, wallWidth/2, 0);
+    glVertex3f(wallWidth / 2, wallWidth / 2, 0);
     glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(0, wallWidth/2, 0);
+    glVertex3f(0, wallWidth / 2, 0);
     glEnd();
 
     //back face
     glBegin(GL_POLYGON);
     glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(0, 0, wallWidth/2);
+    glVertex3f(0, 0, wallWidth / 2);
     glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(wallWidth/2, 0.0, wallWidth/2);
+    glVertex3f(wallWidth / 2, 0.0, wallWidth / 2);
     glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(wallWidth/2, wallWidth/2, wallWidth/2);
+    glVertex3f(wallWidth / 2, wallWidth / 2, wallWidth / 2);
     glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(0, wallWidth/2, wallWidth/2);
+    glVertex3f(0, wallWidth / 2, wallWidth / 2);
     glEnd();
 
     //top face
     glBegin(GL_POLYGON);
     glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(0, wallWidth/2, 0);
+    glVertex3f(0, wallWidth / 2, 0);
     glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(wallWidth/2, wallWidth/2, 0);
+    glVertex3f(wallWidth / 2, wallWidth / 2, 0);
     glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(wallWidth/2, wallWidth/2, wallWidth / 2);
+    glVertex3f(wallWidth / 2, wallWidth / 2, wallWidth / 2);
     glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(0, wallWidth/2, wallWidth / 2);
+    glVertex3f(0, wallWidth / 2, wallWidth / 2);
     glEnd();
 
     //left face
@@ -344,13 +348,13 @@ void singleObstacle(float xWidth, float yHeight, float zThickness)
     //rigth face
     glBegin(GL_POLYGON);
     glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(wallWidth/2, 0, 0);
+    glVertex3f(wallWidth / 2, 0, 0);
     glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(wallWidth/2, wallWidth / 2, 0);
+    glVertex3f(wallWidth / 2, wallWidth / 2, 0);
     glTexCoord2f(1.0f, 1.0f);
     glVertex3f(wallWidth / 2, wallWidth / 2, wallWidth / 2);
     glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(wallWidth/2, 0,wallWidth/2);
+    glVertex3f(wallWidth / 2, 0, wallWidth / 2);
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
@@ -362,10 +366,10 @@ void singleReward(float xWidth, float yHeight, float zThickness)
     glPushMatrix();
     glScalef(xWidth, yHeight, zThickness);
     glTranslatef(-0.2, 0.5, 0.0);
-   
+
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D,rewardTexture);
-    glBegin(GL_POLYGON);    
+    glBindTexture(GL_TEXTURE_2D, rewardTexture);
+    glBegin(GL_POLYGON);
     for (int angle = 0.0; angle < 360.0; angle += 2.0)
     {
         float radian = angle * (piby180);
@@ -373,7 +377,6 @@ void singleReward(float xWidth, float yHeight, float zThickness)
         float y = sin(radian) * 0.25 + 0.25;
         glTexCoord2f(x, y);
         glVertex3f(x, y, 0);
-        
     }
     glEnd();
     //glColor3f(0.1, 0.1, 0.1);
@@ -391,14 +394,13 @@ pair<int, int> rarity()
     if (i == cnt)
     {
         genrandom();
-        i=0;
-        int arr[]={0,1,2,9,8};
-        return make_pair(arr[rand()%7], rand() % 2);
+        i = 0;
+        int arr[] = {0, 1, 2, 9, 8};
+        return make_pair(arr[rand() % 7], rand() % 2);
     }
     i++;
     return make_pair(-1, 1);
 }
-
 
 // Function to calculate subway position
 float subwayCurve(float zPos, float (*curveFunc)(float))
@@ -427,7 +429,6 @@ void initDeque()
     }
 }
 
-
 // draws full subway
 void drawFullsubway()
 {
@@ -439,23 +440,23 @@ void drawFullsubway()
         float reqAngleY = atan(subwayCurveDerivative(globalZ + subwayUnitsCount * zLength, cos)) * 180 / 3.14;
         glRotatef(reqAngleX, 0.0, 1.0, 0.0);
         glRotatef(reqAngleY, -1.0, 0.0, 0.0);
-        
+
         pair<int, int> oP = dq[i].obstaclePos;
         for (int i = 0; i < subwaySides; i++)
         {
             glPushMatrix();
             glRotatef(-wallAngle * i, 0.0, 0.0, 1.0);
             glTranslatef(0.0, -wallDistFromCenter, 0);
-        
+
             if (i == oP.first)
             {
                 if (oP.second)
                 {
                     //initObstacleProperties();
-                    singleObstacle(2*wallWidth/3, 2*wallWidth/3, 2*wallWidth/3);
+                    singleObstacle(2 * wallWidth / 3, 2 * wallWidth / 3, 2 * wallWidth / 3);
                 }
                 else
-                    singleReward(2*wallWidth/3, 2*wallWidth/3, 2*wallWidth/3);
+                    singleReward(2 * wallWidth / 3, 2 * wallWidth / 3, 2 * wallWidth / 3);
             }
             initMaterialProperties();
             singleSide(wallWidth);
@@ -464,18 +465,16 @@ void drawFullsubway()
         glPopMatrix();
     }
     glDisable(GL_LIGHTING);
-    glColor3f(0,0,0);
+    glColor3f(0, 0, 0);
     glPushMatrix();
     glTranslatef(dq[2].centerX, dq[2].centerY, dq[2].centerZ);
-    glRotatef(sceneRotate,0,0,-1);    
+    glRotatef(sceneRotate, 0, 0, -1);
     glTranslatef(0, -1, 0);
-    glScalef(0.25,0.25,0.25);
-    
-    glutSolidSphere(0.5,20,20);
+    glScalef(0.25, 0.25, 0.25);
+
+    glutSolidSphere(0.5, 20, 20);
     glPopMatrix();
     glEnable(GL_LIGHTING);
-
-
 }
 
 // precalculations for the scene
@@ -510,11 +509,106 @@ void drawMenu()
     glFlush();
 }
 
+void drawQuad(float x0, float y0, float x2, float y2)
+{
+    glBegin(GL_QUADS);
+    glVertex3f(x0, y0, 0.0);
+    glVertex3f(x2, y0, 0.0);
+    glVertex3f(x2, y2, 0.0);
+    glVertex3f(x0, y2, 0.0);
+    glEnd();
+}
+
+void printString(string str, float x, float y, float z)
+{
+    glRasterPos3f(x, y, z);
+    for (int i = 0; i < str.size(); i++)
+    {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, str[i]);
+    }
+}
+
+void showScore(string s)
+{
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+    glColor3f(0, 0, 0);
+    glPushMatrix();
+    glTranslatef(-1.0f, 7.25, -10.0);
+    // drawQuad(2, 4.5, 4.5, 3.5);
+    // drawQuad(-0.8,-0.3, 0.7,-0.9);
+    glColor3f(0, 0, 0);
+    printString("Score: " + s, 2.1, 3.9, -10);
+    // printString(s, -0.17-0.05*s.size(), -0.7, 0);
+    glPopMatrix();
+    glColor3f(1, 1, 1);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_DEPTH_TEST);
+}
+
+void resetAll()
+{
+    division = 0.0;
+    sceneRotate = 0.0;
+    tunnelAngle = 0.0;
+    zLength = 1.0;
+    dq.clear();
+    isPressed.clear();
+    showGameOver = 1;
+    glutKeyboardFunc(handleNothing);
+    glutKeyboardUpFunc(handleNothing);
+    glutSpecialFunc(handleNothing);
+    glutSpecialUpFunc(handleNothing);
+    system("amixer -D pulse sset Master 70%");
+}
+
+void drawGameOverQuad(float x0, float y0, float x2, float y2)
+{
+    float xratio = (0.6) * (float)windowWidth / (float)windowHeight;
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, gameOverTexture);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.5f - xratio / 2, 1.0f);
+    glVertex3f(x0, y0, 0.0);
+    glTexCoord2f(0.5f + xratio / 2, 1.0f);
+    glVertex3f(x2, y0, 0.0);
+    glTexCoord2f(0.5f + xratio / 2, 0.0f);
+    glVertex3f(x2, y2, 0.0);
+    glTexCoord2f(0.5f - xratio / 2, 0.0f);
+    glVertex3f(x0, y2, 0.0);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+}
+
+void makeGameOver()
+{
+    glDisable(GL_LIGHTING);
+    glColor3f(1, 0, 0);
+    drawGameOverQuad(-1.0, 1.0, 1.0, -1.0);
+    printString("SCORE: " + to_string(score), -0.2, -0.2, -1.0);
+    glColor3f(0.1, 0.1, 0.1);
+    glEnable(GL_LIGHTING);
+}
+
+void drawGameOver()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    // makeMenu();
+    makeGameOver();
+    glFlush();
+}
+
 // draws main game
 void drawGame()
 {
-    if(isPressed['a'])sceneRotate=min(sceneRotate+wallAngle,2*wallAngle);
-    if(isPressed['d'])sceneRotate=max(sceneRotate-wallAngle,-2*wallAngle);
+    if (isPressed['a'])
+        sceneRotate = min(sceneRotate + wallAngle, 2 * wallAngle);
+    if (isPressed['d'])
+        sceneRotate = max(sceneRotate - wallAngle, -2 * wallAngle);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -528,23 +622,37 @@ void drawGame()
     glRotatef(sceneAngleY + sceneDeltaAngleY, -1.0, 0.0, 0.0);
     drawFullsubway();
     glPopMatrix();
-    if(isPressed['o'])terrain_check=!terrain_check;
+    if (isPressed['o'])
+        terrain_check = !terrain_check;
     isPressed.clear();
+    showScore(to_string(score));
     glFlush();
-    
-    
 }
+void endgame()
+{
+    cout << score;
+    exit(0);
+    return;
+}
+void detectCollision(subwayUnitInfo sui)
+{
+    int pos = sui.obstaclePos.first;
+    if (pos == -1)
+        return;
+    if (pos > subwaySides / 2)
+        pos -= subwaySides;
 
-void detectCollision(subwayUnitInfo sui){
-    int pos=sui.obstaclePos.first;
-    if(pos==-1)return;
-    if(pos>subwaySides/2)pos-=subwaySides;
-    
-    if(sceneRotate==pos*wallAngle){
-        
-        if(!sui.obstaclePos.second)
-        score+=100,
-        cout<<score;
+    if (sceneRotate == pos * wallAngle)
+    {
+
+        if (!sui.obstaclePos.second)
+            score += 100,
+                cout << score;
+        else
+        {
+            glutDisplayFunc(drawGameOver);
+            resetAll();
+        }
         fflush(stdout);
     }
 }
@@ -571,7 +679,7 @@ void handleTimer(int)
         globalZ -= zLength;
     }
     glutPostRedisplay();
-    glutTimerFunc(100.0 / framerate, handleTimer, 0);
+    glutTimerFunc(10000.0 / framerate, handleTimer, 0);
 }
 
 int main(int argc, char **argv)
@@ -582,5 +690,4 @@ int main(int argc, char **argv)
     initBasicCallbacks();
     loadTextures();
     glutMainLoop();
-    
 }

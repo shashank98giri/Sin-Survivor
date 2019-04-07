@@ -47,12 +47,17 @@ void initPerspectiveAndCamera()
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+    // glPushMatrix();
+    // glTranslatef(0,-1,0);
     if(isPressed['1'])eyePos[1]=min(eyePos[1]+0.1f,-0.2f);
     if(isPressed['3'])eyePos[1]=max(eyePos[1]-0.1f,-0.9f);
     //if(isPressed['2'])eyePos[2]=min(eyePos[2])
     if(isPressed['a'])center[0]=max(center[0]-0.5f,-1.0f);
     if(isPressed['d'])center[0]=min(center[0]+0.5f,1.0f);
-    
+    glMatrixMode(GL_MODELVIEW);
     gluPerspective(45.0, windowWidth / windowHeight, 0.01, 1000);
     gluLookAt(eyePos[0], eyePos[1], eyePos[2], center[0], center[1], center[2], up[0], up[1], up[2]);
+   // glPopMatrix();
+   initFog();
+    //glPopMatrix();
 }
