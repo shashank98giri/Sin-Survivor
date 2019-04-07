@@ -11,9 +11,11 @@ void handleSpecialFunc(int key,int x,int y){
             break;
         case GLUT_KEY_LEFT:
             isPressed['a'] = true;
+            cadjust-=1;
             break;
         case GLUT_KEY_RIGHT:
             isPressed['d'] = true;
+            cadjust+=1;
             break;
     }
 }
@@ -22,12 +24,14 @@ void handleKeyboardFunc(unsigned char key,int x,int y){
         case 'w':isPressed['w']=true;
                 break;
         case 'a':isPressed['a']=true;
+                cadjust-=1;
                 break;
         case 's':
             isPressed['s'] = true;
             break;
         case 'd':
             isPressed['d'] = true;
+            cadjust+=1;
             break;
         case '1':
             isPressed['1'] = true;
@@ -54,10 +58,9 @@ void initPerspectiveAndCamera()
     //if(isPressed['2'])eyePos[2]=min(eyePos[2])
     if(isPressed['a'])center[0]=max(center[0]-0.5f,-1.0f);
     if(isPressed['d'])center[0]=min(center[0]+0.5f,1.0f);
-    glMatrixMode(GL_MODELVIEW);
     gluPerspective(45.0, windowWidth / windowHeight, 0.01, 1000);
-    gluLookAt(eyePos[0], eyePos[1], eyePos[2], center[0], center[1], center[2], up[0], up[1], up[2]);
-   // glPopMatrix();
-   initFog();
-    //glPopMatrix();
+    gluLookAt(eyePos[0], eyePos[1], eyePos[2], center[0], center[1], center[2], up[0], up[1], up[2]);   
+    glMatrixMode(GL_MODELVIEW);
+    initFog();
+    
 }

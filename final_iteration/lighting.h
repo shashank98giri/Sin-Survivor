@@ -16,7 +16,7 @@ void initLights()
     GLfloat light_ambient[] = {1.0f * intensity, 1.0f * intensity, 1.0f * intensity, 1.0f};
     GLfloat light_diffuse[] = {1.0f * intensity, 1.0f * intensity, 1.0f * intensity, 1.0f};
     GLfloat light_specular[] = {1.0f * intensity, 1.0f * intensity, 1.0f * intensity ,1.0f};
-    GLfloat light_position[] = {light0_X, light0_Y, light0_Z, 1.0};
+    GLfloat light_position[] = {light0_X, light0_Y, light0_Z-1, 1.0};
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
