@@ -1,4 +1,4 @@
-# Sin-Survivor
+# Subway-Simulator
 
 Computer Graphics Project (CS354) using opengl.<br>
 The project is build using opengl(a graphics rendering API) <br>
@@ -15,4 +15,4 @@ Now to run the project just run `./build` in the final iteration folder
   * a or <- left movement
   * d or -> right movement
   * o toggles between terrain and normal texture
-  * 1,2,3,4 camera movements
+  * 2,3 camera movements
