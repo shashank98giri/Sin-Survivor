@@ -6,49 +6,28 @@
 #include "terrain.h"
 using namespace std;
 
-//global variables used in all other files
-float framerate,
-    piby180 = 3.14 / 180,
-    sceneX,
-    sceneY,
+GLUquadric *quad;
+    //global variables used in all other files
+    float framerate, piby180 = 3.14 / 180,
     cnt = 0,
-    eyePos[3] = {0.0, -0.7, 0.0},
-    center[3] = {0.0, 0, -5},
-    up[3] = {0.0, 1.0, 0.0},
-    sceneDeltaX,
-    sceneDeltaY,
-    sceneAngleX,
-    sceneAngleY,
-    sceneDeltaAngleX,
-    sceneDeltaAngleY,
-    light0_X = 0.0,
-    light0_Y = 0.0,
-    light0_Z = 0.0,
+    eyePos[3] = {0.0, -0.7, 0.0}, center[3] = {0.0, 0, -5}, up[3] = {0.0, 1.0, 0.0},
+    light0_X = 0.0, light0_Y = 0.0, light0_Z = 0.0,
     division = 0.0,
     sceneRotate = 0.0,
     subwayAngle = 0.0,
-    globalZ = 0,
-    zLength = 1.0,
-    tunnelAngle = 0.0,
+    globalZ = 0, zLength = 1.0,
     subwaySpeed = 0.1;
 
-int windowWidth = 1500,
-    windowHeight = 1000,
+int windowWidth = 1500, windowHeight = 1000,
     showGameOver = 0,
-    windowX = 100,
-    windowY = 100,
+    windowX = 100, windowY = 100,
     showMenu = 1,
-    subwaySides = 10,
-    subwayUnitsCount = 150,
+    subwaySides = 10, subwayUnitsCount = 50,
     score=0,
     terrain_check=1,
-    cadjust=0;
+    cadjust=0,framecnt=0;
 
-GLint subwayTexture,
-    startTexture,
-    obstacleTexture,
-    gameOverTexture,
-    rewardTexture;
+GLint subwayTexture, startTexture, obstacleTexture, gameOverTexture, rewardTexture, stexture;
 
 float wallWidth = 1,
       wallAngle = 360.0 / subwaySides,
@@ -56,16 +35,11 @@ float wallWidth = 1,
 
 #include "lighting.h"
 #include "keyboard.h"
-float subwayCurve(float, float (*)(float));
 void drawGame();
 void drawMenu();
-void initGameAndControls();
 void initDeque();
 void handleTimer(int);
 
-void handleNothing(int a, int b, int c) {}
-void handleNothing(unsigned char a, int b, int c) {}
-void handleNothing(int) {}
 
 // Data structures for positioning subway and obstacles
 struct subwayUnitInfo
@@ -177,9 +151,13 @@ void handleMouse(int button, int state, int x, int y)
     if (showMenu == 1 && button == GLUT_LEFT_BUTTON && state == GLUT_UP)
     {
         showMenu = 0;
-        framerate = 250;
+        framerate = 500;
         handleResize(windowWidth, windowHeight);
-        initGameAndControls();
+        glutDisplayFunc(drawGame);
+        initDeque();
+        glutTimerFunc(0, handleTimer, 0);
+        glutKeyboardFunc(handleKeyboardFunc);
+        glutSpecialFunc(handleSpecialFunc);
     }
 
     glutPostRedisplay();
@@ -200,16 +178,6 @@ void initWindow()
     glClearColor(0.1, 0.1, 0.1, 0.0);
 }
 
-// begin game and set all keyboard controls
-void initGameAndControls()
-{
-    glutDisplayFunc(drawGame);
-    initDeque();
-    glutTimerFunc(0, handleTimer, 0);
-    glutKeyboardFunc(handleKeyboardFunc);
-    glutSpecialFunc(handleSpecialFunc);
-    
-}
 
 // initializing Resize Menu and Mouse functions
 void initBasicCallbacks()
@@ -228,6 +196,7 @@ void loadTextures()
     obstacleTexture = LoadBMP("textures/obstacle.bmp");
     rewardTexture = LoadAny("textures/gold.jpg");
     gameOverTexture = LoadBMP("textures/game_over.bmp");
+    stexture=obstacleTexture;
 }
 
 void singleSide(float xWidth)
@@ -408,28 +377,13 @@ pair<int, int> rarity()
 }
 
 
-// Function to calculate subway position
-float subwayCurve(float zPos, float (*curveFunc)(float))
-{
-    float stretch = 1000;
-    float radToDeg = zPos / piby180;
-    float amplitude = 1;
-    return 1;
-}
-
-// Function to calculate derivative of subway curve
-float subwayCurveDerivative(float zPos, float (*curveFunc)(float))
-{
-    return (subwayCurve(zPos + 0.01, curveFunc) - subwayCurve(zPos, curveFunc)) / 0.01;
-}
-
 // function to initialize starting deque()
 void initDeque()
 {
     for (int i = 0; i < subwayUnitsCount; i++)
     {
         pair<int, int> oP = rarity();
-        subwayUnitInfo tui(subwayCurve(globalZ, sin), subwayCurve(globalZ, cos), globalZ, oP);
+        subwayUnitInfo tui(1, 1, globalZ, oP);
         dq.push_back(tui);
         globalZ -= zLength;
     }
@@ -442,11 +396,7 @@ void drawFullsubway()
     for (int i = 0; i < dq.size(); i++)
     {
         glPushMatrix();
-        glTranslatef(dq[i].centerX, dq[i].centerY, dq[i].centerZ);
-        float reqAngleX = atan(subwayCurveDerivative(globalZ + subwayUnitsCount * zLength, sin)) * 180 / 3.14;
-        float reqAngleY = atan(subwayCurveDerivative(globalZ + subwayUnitsCount * zLength, cos)) * 180 / 3.14;
-        glRotatef(reqAngleX, 0.0, 1.0, 0.0);
-        glRotatef(reqAngleY, -1.0, 0.0, 0.0);
+        glTranslatef(dq[i].centerX, dq[i].centerY, dq[i].centerZ);       
         
         pair<int, int> oP = dq[i].obstaclePos;
         for (int i = 0; i < subwaySides; i++)
@@ -459,7 +409,6 @@ void drawFullsubway()
             {
                 if (oP.second)
                 {
-                    //initObstacleProperties();
                     singleObstacle(2*wallWidth/3, 2*wallWidth/3, 2*wallWidth/3);
                 }
                 else
@@ -471,41 +420,28 @@ void drawFullsubway()
         }
         glPopMatrix();
     }
-    glDisable(GL_LIGHTING);
+    //glDisable(GL_LIGHTING);
     glColor3f(0,0,0);
     glPushMatrix();
     glTranslatef(dq[2].centerX, dq[2].centerY, dq[2].centerZ);
     glRotatef(sceneRotate,0,0,-1);    
     glTranslatef(0, -1, 0);
     glScalef(0.25,0.25,0.25);
-    
-    glutSolidSphere(0.5,20,20);
+    // Uncomment for binding texture
+    glEnable(GL_TEXTURE_2D);
+
+    glBindTexture(GL_TEXTURE_2D, stexture);
+    gluQuadricTexture(quad, 1);
+
+    gluSphere(quad, 0.5, 20, 20);
+    //glutSolidSphere(0.5,20,20);
     glPopMatrix();
-    glEnable(GL_LIGHTING);
+    //glEnable(GL_LIGHTING);
 
 
 }
 
-// precalculations for the scene
-void sceneMovementCalculations()
-{
 
-    sceneX = -subwayCurve(globalZ + subwayUnitsCount * zLength, sin);
-    float nextSceneX = -subwayCurve((globalZ - zLength) + subwayUnitsCount * zLength, sin);
-    sceneDeltaX = (nextSceneX - sceneX) * division;
-
-    sceneY = -subwayCurve(globalZ + subwayUnitsCount * zLength, cos);
-    float nextsceneY = -subwayCurve((globalZ - zLength) + subwayUnitsCount * zLength, cos);
-    sceneDeltaY = (nextsceneY - sceneY) * division;
-
-    sceneAngleX = -atan(subwayCurveDerivative(globalZ + subwayUnitsCount * zLength, sin)) * 180 / 3.14;
-    float nextsceneAngleX = -atan(subwayCurveDerivative((globalZ - zLength) + subwayUnitsCount * zLength, sin)) * 180 / 3.14;
-    sceneDeltaAngleX = ((nextsceneAngleX) - (sceneAngleX)) * division;
-
-    sceneAngleY = -atan(subwayCurveDerivative(globalZ + subwayUnitsCount * zLength, cos)) * 180 / 3.14;
-    float nextsceneAngleY = -atan(subwayCurveDerivative((globalZ - zLength) + subwayUnitsCount * zLength, cos)) * 180 / 3.14;
-    sceneDeltaAngleY = ((nextsceneAngleY) - (sceneAngleY)) * division;
-}
 
 void drawMenu()
 {
@@ -518,14 +454,6 @@ void drawMenu()
     glFlush();
 }
 
-void drawQuad(float x0, float y0, float x2, float y2) {
-	glBegin(GL_QUADS);
-    glVertex3f(x0, y0, 0.0);
-    glVertex3f(x2, y0, 0.0);
-    glVertex3f(x2, y2, 0.0);
-    glVertex3f(x0, y2, 0.0);
-    glEnd();
-}
 
 void printString(string str, float x, float y, float z) {
     glRasterPos3f(x, y, z);
@@ -584,33 +512,22 @@ void drawGame()
 {
     if(isPressed['a'])sceneRotate=min(sceneRotate+wallAngle,2*wallAngle);
     if(isPressed['d'])sceneRotate=max(sceneRotate-wallAngle,-2*wallAngle);
+    framecnt++;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    sceneMovementCalculations();
     glPushMatrix();
     initPerspectiveAndCamera();
     initLights();
-    glTranslatef(sceneX + sceneDeltaX, 0, 0);
-    glTranslatef(0, sceneY + sceneDeltaY, 0);
-    glRotatef(sceneAngleX + sceneDeltaAngleX, 0.0, 1.0, 0.0);
-    glRotatef(sceneAngleY + sceneDeltaAngleY, -1.0, 0.0, 0.0);
-    // glEnable(GL_BLEND);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glTranslatef(-1,-1,0);
     drawFullsubway();
     glPopMatrix();
     if(isPressed['o'])terrain_check=!terrain_check;
     isPressed.clear();
-    showScore(to_string(score));
+    //showScore(to_string(score));
     glFlush();
     
     
-}
-void endgame(){
-    cout<<score;
-    exit(0);
-    return;
-
 }
 void detectCollision(subwayUnitInfo sui){
     int pos=sui.obstaclePos.first;
@@ -646,13 +563,13 @@ void handleTimer(int)
         float zPos = dq[lastIndex].centerZ - zLength;
 
         pair<int, int> oP = rarity();
-        subwayUnitInfo tui(subwayCurve(globalZ, sin), subwayCurve(globalZ, cos), zPos, oP);
+        subwayUnitInfo tui(1,1, zPos, oP);
         dq.push_back(tui);
         dq.pop_front();
         globalZ -= zLength;
     }
     glutPostRedisplay();
-    glutTimerFunc(1000.0 / framerate, handleTimer, 0);
+    glutTimerFunc(10000.0 / framerate, handleTimer, 0);
 }
 
 int main(int argc, char **argv)
@@ -661,6 +578,7 @@ int main(int argc, char **argv)
     initWindow();
     _terrain = loadTerrain("terrain/heightmap.bmp", 10);
     initBasicCallbacks();
+    quad = gluNewQuadric();
     loadTextures();
     glutMainLoop();
     
